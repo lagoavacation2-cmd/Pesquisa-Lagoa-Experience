@@ -1,4 +1,4 @@
--- 1. Criar a tabela com a estrutura correta
+-- 1. Criar a tabela com a estrutura completa
 CREATE TABLE IF NOT EXISTS public.nps_lagoa_experience (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at timestamptz DEFAULT now(),
@@ -23,6 +23,11 @@ CREATE TABLE IF NOT EXISTS public.nps_lagoa_experience (
     user_agent text,
     dispositivo text
 );
+
+-- 1.1 Garantir que as novas colunas existam caso a tabela tenha sido criada anteriormente
+ALTER TABLE public.nps_lagoa_experience 
+ADD COLUMN IF NOT EXISTS data_checkin date,
+ADD COLUMN IF NOT EXISTS data_checkout date;
 
 -- 2. Ativar Row Level Security
 ALTER TABLE public.nps_lagoa_experience ENABLE ROW LEVEL SECURITY;
