@@ -21,6 +21,14 @@
   .glass-card {
     @apply bg-white/90 backdrop-blur-md border border-white/40 shadow-xl;
   }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Custom Scrollbar */
