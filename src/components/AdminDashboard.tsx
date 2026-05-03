@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, TrendingUp, Smile, Meh, Frown, 
   BarChart3, Calendar, Search, Download, 
-  RefreshCw, Wifi, WifiOff, LogOut, Filter
+  RefreshCw, Wifi, WifiOff, LogOut, Filter, Trash2, AlertCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
-  LineChart, Line
+  Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { format, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { supabase } from '@/src/lib/supabase';
@@ -20,6 +19,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<NpsResponse[]>([]);
   const [filteredData, setFilteredData] = useState<NpsResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
   
   // Filters
@@ -33,35 +33,48 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: responses, error } = await supabase
-      .from('nps_lagoa_experience')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data: responses, error } = await supabase
+        .from('nps_lagoa_experience')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && responses) {
-      setData(responses);
+      if (error) throw error;
+      if (responses) setData(responses);
+    } catch (err) {
+      console.error('Erro ao buscar dados:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
 
-    // Set up Realtime
+    // Set up Realtime global channel
     const channel = supabase
-      .channel('nps_changes')
+      .channel('nps-lagoa-experience-realtime')
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: '*', 
         schema: 'public', 
         table: 'nps_lagoa_experience' 
       }, (payload) => {
-        const newResponse = payload.new as NpsResponse;
-        setData(prev => [newResponse, ...prev]);
-        // Simple Toast logic would go here if needed
+        console.log('Mudança Realtime recebida:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          const newResponse = payload.new as NpsResponse;
+          setData(prev => [newResponse, ...prev]);
+        } else if (payload.eventType === 'DELETE') {
+          setData(prev => prev.filter(item => item.id !== payload.old.id));
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new as NpsResponse;
+          setData(prev => prev.map(item => item.id === updated.id ? updated : item));
+        }
       })
       .subscribe((status) => {
+        console.log('Status Realtime:', status);
         if (status === 'SUBSCRIBED') setRealtimeStatus('connected');
-        if (status === 'CHANNEL_ERROR') setRealtimeStatus('error');
+        if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setRealtimeStatus('error');
       });
 
     return () => {
@@ -97,6 +110,28 @@ export default function AdminDashboard() {
     setFilteredData(result);
   }, [data, filters]);
 
+  const handleDelete = async (id: string, nome: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir a pesquisa de "${nome}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('nps_lagoa_experience')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      // Note: Realtime will handle the state update
+    } catch (err: any) {
+      console.error('Erro ao excluir:', err);
+      alert('Não foi possível excluir a pesquisa. ' + (err.message || ''));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Metrics Calculations
   const total = filteredData.length;
   const promoters = filteredData.filter(r => r.classificacao_nps === 'Promotor').length;
@@ -120,16 +155,10 @@ export default function AdminDashboard() {
     { name: 'Hospedagem', score: parseFloat(getAverage('satisfacao_hospedagem')) },
     { name: 'Atend. Hotel', score: parseFloat(getAverage('atendimento_hotel')) },
     { name: 'Atend. Parque', score: parseFloat(getAverage('atendimento_parque')) },
-    { name: 'Estrutura', score: parseFloat(getAverage('lazer_structure')) },
+    { name: 'Estrutura', score: parseFloat(getAverage('lazer_estrutura')) },
     { name: 'Apresentação', score: parseFloat(getAverage('apresentacao_produto')) },
     { name: 'Clareza', score: parseFloat(getAverage('clareza_consultor')) },
     { name: 'Expectativa', score: parseFloat(getAverage('expectativa_entregue')) },
-  ];
-
-  const classData = [
-    { name: 'Promotores', value: promoters, color: '#10b981' },
-    { name: 'Neutros', value: neutrals, color: '#f59e0b' },
-    { name: 'Detratores', value: detractors, color: '#ef4444' }
   ];
 
   const exportCSV = () => {
@@ -137,7 +166,7 @@ export default function AdminDashboard() {
     const rows = filteredData.map(r => 
       `${r.created_at},${r.nome},${r.telefone},${r.hotel},${r.nota_nps},${r.classificacao_nps},"${r.comentario_final?.replace(/"/g, '""') || ''}"`
     ).join("\n");
-    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\uFEFF" + headers + rows], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `nps_lagoa_export_${format(new Date(), 'dd-MM-yyyy')}.csv`;
@@ -149,15 +178,19 @@ export default function AdminDashboard() {
       {/* Header Admin */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Indicadores de Satisfação</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Indicadores em Tempo Real</h1>
           <div className="flex items-center gap-2 mt-1">
             {realtimeStatus === 'connected' ? (
               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                <Wifi size={12} /> Tempo Real Ativo
+                <Wifi size={12} /> Conectado
               </span>
-            ) : (
+            ) : realtimeStatus === 'connecting' ? (
               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full animate-pulse">
                 <RefreshCw size={12} className="animate-spin" /> Conectando...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                <WifiOff size={12} /> Erro Conexão
               </span>
             )}
           </div>
@@ -166,7 +199,7 @@ export default function AdminDashboard() {
           <button 
             onClick={fetchData} 
             className="p-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors border border-slate-200"
-            title="Atualizar manual"
+            title="Sincronizar agora"
           >
             <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
           </button>
@@ -174,7 +207,7 @@ export default function AdminDashboard() {
             onClick={exportCSV}
             className="flex items-center gap-2 px-4 py-3 bg-sky-50 text-sky-600 rounded-xl hover:bg-sky-100 transition-all font-bold text-sm border border-sky-100 shadow-sm"
           >
-            <Download size={18} /> Exportar CSV
+            <Download size={18} /> Exportar
           </button>
           <button 
             onClick={() => { logout(); window.location.reload(); }}
@@ -189,33 +222,42 @@ export default function AdminDashboard() {
       {/* Main Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Respostas" value={total} icon={<Users size={24} />} variant="blue" />
-        <StatCard title="Score NPS" value={npsScore.toFixed(0)} icon={<TrendingUp size={24} />} variant={npsScore >= 75 ? 'emerald' : npsScore >= 50 ? 'amber' : 'red'} trend="Últimos 30 dias" />
-        <StatCard title="Satisfação Geral" value={`${(parseFloat(getAverage('satisfacao_hospedagem')) * 20).toFixed(0)}%`} icon={<Smile size={24} />} variant="emerald" />
-        <StatCard title="Média Hotel" value={getAverage('atendimento_hotel')} icon={<BarChart3 size={24} />} variant="blue" />
+        <StatCard title="Score NPS" value={npsScore.toFixed(0)} icon={<TrendingUp size={24} />} variant={npsScore >= 75 ? 'emerald' : npsScore >= 50 ? 'amber' : 'red'} />
+        <StatCard title="Média Hospedagem" value={getAverage('satisfacao_hospedagem')} icon={<Smile size={24} />} variant="emerald" />
+        <StatCard title="Atendimento Hotel" value={getAverage('atendimento_hotel')} icon={<BarChart3 size={24} />} variant="blue" />
       </div>
 
-      {/* Detailed NPS Stats */}
+      {/* DETAILED NPS BLOCKS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-emerald-500 p-6 rounded-3xl text-white shadow-lg shadow-emerald-100">
+        <div className="bg-emerald-500 p-6 rounded-3xl text-white shadow-lg shadow-emerald-100 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 opacity-10 -translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform">
+             <Smile size={120} />
+          </div>
           <div className="flex justify-between items-center mb-2">
-            <Smile size={28} className="opacity-80" />
             <span className="text-3xl font-black">{total > 0 ? ((promoters/total)*100).toFixed(0) : 0}%</span>
+            <Smile size={24} className="opacity-80" />
           </div>
           <h4 className="text-sm font-bold uppercase tracking-widest opacity-90">Promotores</h4>
           <p className="text-2xl font-bold">{promoters}</p>
         </div>
-        <div className="bg-amber-400 p-6 rounded-3xl text-white shadow-lg shadow-amber-100">
+        <div className="bg-amber-400 p-6 rounded-3xl text-white shadow-lg shadow-amber-100 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 opacity-10 -translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform">
+             <Meh size={120} />
+          </div>
           <div className="flex justify-between items-center mb-2">
-            <Meh size={28} className="opacity-80" />
             <span className="text-3xl font-black">{total > 0 ? ((neutrals/total)*100).toFixed(0) : 0}%</span>
+            <Meh size={24} className="opacity-80" />
           </div>
           <h4 className="text-sm font-bold uppercase tracking-widest opacity-90">Neutros</h4>
           <p className="text-2xl font-bold">{neutrals}</p>
         </div>
-        <div className="bg-red-500 p-6 rounded-3xl text-white shadow-lg shadow-red-100">
+        <div className="bg-red-500 p-6 rounded-3xl text-white shadow-lg shadow-red-100 relative overflow-hidden group">
+           <div className="absolute right-0 bottom-0 opacity-10 -translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform">
+             <Frown size={120} />
+          </div>
           <div className="flex justify-between items-center mb-2">
-            <Frown size={28} className="opacity-80" />
             <span className="text-3xl font-black">{total > 0 ? ((detractors/total)*100).toFixed(0) : 0}%</span>
+            <Frown size={24} className="opacity-80" />
           </div>
           <h4 className="text-sm font-bold uppercase tracking-widest opacity-90">Detratores</h4>
           <p className="text-2xl font-bold">{detractors}</p>
@@ -251,30 +293,35 @@ export default function AdminDashboard() {
           onChange={e => setFilters({...filters, npsClass: e.target.value})}
         >
           <option value="">Todas Categorias</option>
-          <option value="Promotor">Somente Promotores</option>
-          <option value="Neutro">Somente Neutros</option>
-          <option value="Detrator">Somente Detratores</option>
+          <option value="Promotor">Promotores</option>
+          <option value="Neutro">Neutros</option>
+          <option value="Detrator">Detratores</option>
         </select>
-        <input 
-          type="date" 
-          className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
-          value={filters.startDate}
-          onChange={e => setFilters({...filters, startDate: e.target.value})}
-        />
-        <input 
-          type="date" 
-          className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
-          value={filters.endDate}
-          onChange={e => setFilters({...filters, endDate: e.target.value})}
-        />
+        <div className="relative">
+          <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input 
+            type="date" 
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
+            value={filters.startDate}
+            onChange={e => setFilters({...filters, startDate: e.target.value})}
+          />
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input 
+            type="date" 
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
+            value={filters.endDate}
+            onChange={e => setFilters({...filters, endDate: e.target.value})}
+          />
+        </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NPS Distribution */}
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <BarChart3 size={20} className="text-sky-600" /> Distribuição das Notas NPS
+            <BarChart3 size={20} className="text-sky-600" /> Distribuição NPS (0-10)
           </h3>
           <div className="h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
@@ -292,10 +339,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Category Averages */}
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <TrendingUp size={20} className="text-emerald-500" /> Média por Categoria
+            <TrendingUp size={20} className="text-emerald-500" /> Médias por Categoria
           </h3>
           <div className="h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
@@ -321,54 +367,82 @@ export default function AdminDashboard() {
       {/* Responses Table */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">Respostas Recentes</h3>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{filteredData.length} avaliações</span>
+          <h3 className="text-lg font-bold text-slate-800">Histórico de Pesquisas</h3>
+          <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
+            {filteredData.length} registros
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Data</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Nome</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Hotel</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Nome / Hotel</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">NPS</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Comentário</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Avaliações</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredData.map((r, i) => (
-                <tr key={r.id || i} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+              {filteredData.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
                     {r.created_at ? format(parseISO(r.created_at), 'dd/MM/yy HH:mm') : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-800">{r.nome}</span>
-                      <span className="text-xs text-slate-500">{r.telefone}</span>
+                      <span className="text-xs text-sky-600 font-medium">{r.hotel}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{r.hotel}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={cn(
-                      "inline-block w-8 h-8 leading-8 rounded-lg font-bold text-sm",
-                      r.classificacao_nps === 'Promotor' ? "bg-emerald-100 text-emerald-600" :
-                      r.classificacao_nps === 'Neutro' ? "bg-amber-100 text-amber-600" :
-                      "bg-red-100 text-red-600"
-                    )}>
-                      {r.nota_nps}
-                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className={cn(
+                        "inline-block w-8 h-8 leading-8 rounded-lg font-bold text-sm",
+                        r.classificacao_nps === 'Promotor' ? "bg-emerald-100 text-emerald-600" :
+                        r.classificacao_nps === 'Neutro' ? "bg-amber-100 text-amber-600" :
+                        "bg-red-100 text-red-600"
+                      )}>
+                        {r.nota_nps}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400">{r.classificacao_nps}</span>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-xs text-slate-500 line-clamp-2 italic max-w-xs">
-                      {r.comentario_final || '-'}
-                    </p>
+                      {r.comentario_final ? (
+                        <div className="flex items-start gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 max-w-xs">
+                          <AlertCircle size={14} className="text-sky-500 mt-0.5 flex-shrink-0" />
+                          <p className="text-[11px] text-slate-600 italic line-clamp-2">
+                            "{r.comentario_final}"
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">Sem comentário</span>
+                      )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => r.id && handleDelete(r.id, r.nome)}
+                      disabled={deletingId === r.id}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30"
+                      title="Excluir"
+                    >
+                      {deletingId === r.id ? (
+                        <RefreshCw size={18} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                    </button>
                   </td>
                 </tr>
               ))}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
-                    Nenhuma resposta encontrada.
+                  <td colSpan={5} className="px-6 py-20 text-center text-slate-400 font-medium">
+                    <div className="flex flex-col items-center gap-3">
+                      <Search size={40} className="opacity-20" />
+                      Nenhum resultado encontrado com os filtros aplicados.
+                    </div>
                   </td>
                 </tr>
               )}

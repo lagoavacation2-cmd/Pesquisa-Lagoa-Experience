@@ -9,7 +9,7 @@ export interface NpsResponse {
   satisfacao_hospedagem: number;
   atendimento_hotel: number;
   atendimento_parque: number;
-  lazer_structure: number;
+  lazer_estrutura: number;
   apresentacao_produto: number;
   clareza_consultor: number;
   expectativa_entregue: number;

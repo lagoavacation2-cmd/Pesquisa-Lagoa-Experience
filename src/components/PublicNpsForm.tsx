@@ -23,7 +23,7 @@ export default function PublicNpsForm() {
     satisfacao_hospedagem: 0,
     atendimento_hotel: 0,
     atendimento_parque: 0,
-    lazer_structure: 0,
+    lazer_estrutura: 0,
     apresentacao_produto: 0,
     clareza_consultor: 0,
     expectativa_entregue: 0,
@@ -37,7 +37,7 @@ export default function PublicNpsForm() {
 
     // Validation
     if (!formData.nome || !formData.telefone || !formData.hotel) {
-      setError("Por favor, preencha os campos obrigatórios.");
+      setError("Por favor, preencha os campos obrigatórios (Nome, Telefone e Hotel).");
       return;
     }
 
@@ -50,42 +50,68 @@ export default function PublicNpsForm() {
       formData.satisfacao_hospedagem,
       formData.atendimento_hotel,
       formData.atendimento_parque,
-      formData.lazer_structure,
+      formData.lazer_estrutura,
       formData.apresentacao_produto,
       formData.clareza_consultor,
       formData.expectativa_entregue
     ];
 
     if (mandatoryRatings.some(r => r === 0)) {
-      setError("Por favor, responda todas as avaliações por estrelas.");
+      setError("Por favor, responda todas as avaliações de 1 a 5 estrelas.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const classification = formData.nota_nps >= 9 ? 'Promotor' : formData.nota_nps >= 7 ? 'Neutro' : 'Detrator';
+      const notaNpsInt = Math.floor(Number(formData.nota_nps));
+      let classification: 'Detrator' | 'Neutro' | 'Promotor' = 'Detrator';
       
-      const payload: NpsResponse = {
-        ...formData,
-        nota_nps: formData.nota_nps,
+      if (notaNpsInt >= 9) {
+        classification = 'Promotor';
+      } else if (notaNpsInt >= 7) {
+        classification = 'Neutro';
+      }
+
+      const payload = {
+        nome: formData.nome,
+        telefone: formData.telefone,
+        email: formData.email || null,
+        hotel: formData.hotel,
+        periodo_hospedagem: formData.periodo_hospedagem || null,
+        satisfacao_hospedagem: Math.floor(Number(formData.satisfacao_hospedagem)),
+        atendimento_hotel: Math.floor(Number(formData.atendimento_hotel)),
+        atendimento_parque: Math.floor(Number(formData.atendimento_parque)),
+        lazer_estrutura: Math.floor(Number(formData.lazer_estrutura)),
+        apresentacao_produto: Math.floor(Number(formData.apresentacao_produto)),
+        clareza_consultor: Math.floor(Number(formData.clareza_consultor)),
+        expectativa_entregue: Math.floor(Number(formData.expectativa_entregue)),
+        nota_nps: notaNpsInt,
         classificacao_nps: classification,
+        comentario_final: formData.comentario_final || null,
         origem: 'Lagoa Experience',
         user_agent: navigator.userAgent,
         dispositivo: getDeviceType()
       };
 
-      const { error: submitError } = await supabase
+      console.log('Enviando payload:', payload);
+
+      const { data: insertData, error: submitError } = await supabase
         .from('nps_lagoa_experience')
-        .insert([payload]);
+        .insert([payload])
+        .select();
 
-      if (submitError) throw submitError;
+      if (submitError) {
+        console.error('Erro detalhado do Supabase:', submitError);
+        throw new Error(submitError.message);
+      }
 
+      console.log('Sucesso ao salvar:', insertData);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      console.error(err);
-      setError("Erro ao enviar avaliação. Tente novamente mais tarde.");
+      console.error('Erro na submissão:', err);
+      setError(`Erro ao enviar avaliação: ${err.message || 'Verifique sua conexão.'}`);
     } finally {
       setLoading(false);
     }
@@ -198,8 +224,8 @@ export default function PublicNpsForm() {
           />
           <RatingScale 
             label="4. Como você avalia o lazer, estrutura e conforto do local onde ficou hospedado?" 
-            value={formData.lazer_structure} 
-            onChange={v => setFormData({...formData, lazer_structure: v})}
+            value={formData.lazer_estrutura} 
+            onChange={v => setFormData({...formData, lazer_estrutura: v})}
           />
           <RatingScale 
             label="5. Como você avalia a apresentação do produto Lagoa Experience?" 
