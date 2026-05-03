@@ -14,6 +14,7 @@ export default function PublicNpsForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -32,14 +33,46 @@ export default function PublicNpsForm() {
     comentario_final: ''
   });
 
+  const ratingFields = [
+    'satisfacao_hospedagem',
+    'atendimento_hotel',
+    'atendimento_parque',
+    'lazer_estrutura',
+    'apresentacao_produto',
+    'clareza_consultor',
+    'expectativa_entregue'
+  ];
+
+  function isEmptyValue(value: any) {
+    return value === null || value === undefined || value === '' || value === 0;
+  }
+
+  function validateRatings() {
+    const errors: Record<string, string> = {};
+
+    ratingFields.forEach((field) => {
+      const value = (formData as any)[field];
+      if (isEmptyValue(value)) {
+        errors[field] = 'Campo obrigatório';
+      }
+    });
+
+    if (formData.nota_nps === null || formData.nota_nps === undefined || formData.nota_nps as any === '') {
+      errors.nota_nps = 'Selecione uma nota de 0 a 10';
+    }
+
+    return errors;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (isSubmitting) return;
 
     setSubmitError(null);
+    setFieldErrors({});
 
-    // Form validation
+    // Form validation (Step 1)
     if (!formData.nome || !formData.telefone || !formData.hotel || !formData.data_checkin || !formData.data_checkout) {
       setSubmitError('Por favor, preencha todos os campos obrigatórios (Nome, Telefone, Hotel e Datas).');
       return;
@@ -50,23 +83,24 @@ export default function PublicNpsForm() {
       return;
     }
 
-    if (formData.nota_nps === null) {
-      setSubmitError('Por favor, responda a pergunta de recomendação (NPS).');
-      return;
-    }
+    // Rating validation (Step 2 & 3)
+    const ratingErrors = validateRatings();
 
-    const mandatoryRatings = [
-      formData.satisfacao_hospedagem,
-      formData.atendimento_hotel,
-      formData.atendimento_parque,
-      formData.lazer_estrutura,
-      formData.apresentacao_produto,
-      formData.clareza_consultor,
-      formData.expectativa_entregue
-    ];
+    if (Object.keys(ratingErrors).length > 0) {
+      setFieldErrors(ratingErrors);
+      
+      if (ratingErrors.nota_nps && Object.keys(ratingErrors).length === 1) {
+        setSubmitError('Por favor, selecione uma nota de recomendação de 0 a 10.');
+      } else {
+        setSubmitError('Por favor, responda todas as perguntas de avaliação antes de finalizar.');
+      }
 
-    if (mandatoryRatings.some(r => r === 0)) {
-      setSubmitError('Por favor, responda todas as avaliações de 1 a 5 estrelas.');
+      // Scroll to first error
+      const firstErrorField = Object.keys(ratingErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -236,39 +270,109 @@ export default function PublicNpsForm() {
           </div>
 
           <RatingScale 
+            id="satisfacao_hospedagem"
             label="1. Como você avalia sua hospedagem de forma geral?" 
             value={formData.satisfacao_hospedagem} 
-            onChange={v => setFormData({...formData, satisfacao_hospedagem: v})}
+            required
+            error={fieldErrors.satisfacao_hospedagem}
+            onChange={v => {
+              setFormData({...formData, satisfacao_hospedagem: v});
+              if (fieldErrors.satisfacao_hospedagem) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.satisfacao_hospedagem;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="atendimento_hotel"
             label="2. Como você avalia o atendimento da equipe do hotel?" 
             value={formData.atendimento_hotel} 
-            onChange={v => setFormData({...formData, atendimento_hotel: v})}
+            required
+            error={fieldErrors.atendimento_hotel}
+            onChange={v => {
+              setFormData({...formData, atendimento_hotel: v});
+              if (fieldErrors.atendimento_hotel) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.atendimento_hotel;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="atendimento_parque"
             label="3. Como você avalia o atendimento da equipe do parque?" 
             value={formData.atendimento_parque} 
-            onChange={v => setFormData({...formData, atendimento_parque: v})}
+            required
+            error={fieldErrors.atendimento_parque}
+            onChange={v => {
+              setFormData({...formData, atendimento_parque: v});
+              if (fieldErrors.atendimento_parque) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.atendimento_parque;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="lazer_estrutura"
             label="4. Como você avalia o lazer, estrutura e conforto do local onde ficou hospedado?" 
             value={formData.lazer_estrutura} 
-            onChange={v => setFormData({...formData, lazer_estrutura: v})}
+            required
+            error={fieldErrors.lazer_estrutura}
+            onChange={v => {
+              setFormData({...formData, lazer_estrutura: v});
+              if (fieldErrors.lazer_estrutura) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.lazer_estrutura;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="apresentacao_produto"
             label="5. Como você avalia a apresentação do produto Lagoa Experience?" 
             value={formData.apresentacao_produto} 
-            onChange={v => setFormData({...formData, apresentacao_produto: v})}
+            required
+            error={fieldErrors.apresentacao_produto}
+            onChange={v => {
+              setFormData({...formData, apresentacao_produto: v});
+              if (fieldErrors.apresentacao_produto) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.apresentacao_produto;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="clareza_consultor"
             label="6. O consultor apresentou as informações de forma clara e respeitosa?" 
             value={formData.clareza_consultor} 
-            onChange={v => setFormData({...formData, clareza_consultor: v})}
+            required
+            error={fieldErrors.clareza_consultor}
+            onChange={v => {
+              setFormData({...formData, clareza_consultor: v});
+              if (fieldErrors.clareza_consultor) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.clareza_consultor;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
           <RatingScale 
+            id="expectativa_entregue"
             label="7. A experiência entregue correspondeu ao que foi apresentado no momento da reserva?" 
             value={formData.expectativa_entregue} 
-            onChange={v => setFormData({...formData, expectativa_entregue: v})}
+            required
+            error={fieldErrors.expectativa_entregue}
+            onChange={v => {
+              setFormData({...formData, expectativa_entregue: v});
+              if (fieldErrors.expectativa_entregue) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.expectativa_entregue;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
         </div>
 
@@ -284,8 +388,18 @@ export default function PublicNpsForm() {
           </label>
           
           <NpsScale 
+            id="nota_nps"
             value={formData.nota_nps} 
-            onChange={v => setFormData({...formData, nota_nps: v})}
+            required
+            error={fieldErrors.nota_nps}
+            onChange={v => {
+              setFormData({...formData, nota_nps: v});
+              if (fieldErrors.nota_nps) {
+                const newErrors = {...fieldErrors};
+                delete newErrors.nota_nps;
+                setFieldErrors(newErrors);
+              }
+            }}
           />
         </div>
 

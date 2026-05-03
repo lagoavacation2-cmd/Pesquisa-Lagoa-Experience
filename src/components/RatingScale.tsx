@@ -6,12 +6,16 @@ interface RatingScaleProps {
   value: number;
   onChange: (value: number) => void;
   required?: boolean;
+  error?: string;
+  id?: string;
 }
 
-export default function RatingScale({ label, value, onChange }: RatingScaleProps) {
+export default function RatingScale({ label, value, onChange, required, error, id }: RatingScaleProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <label className="text-sm font-medium text-slate-700">{label}</label>
+    <div id={id} className={cn("flex flex-col gap-3 p-4 rounded-2xl transition-all", error && "bg-red-50/50 ring-1 ring-red-200")}>
+      <label className="text-sm font-medium text-slate-700">
+        {label} {required && <span className="text-red-400">*</span>}
+      </label>
       <div className="flex items-center justify-between max-w-sm">
         {[1, 2, 3, 4, 5].map((num) => (
           <button
@@ -28,7 +32,7 @@ export default function RatingScale({ label, value, onChange }: RatingScaleProps
                 "w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-colors",
                 value === num
                   ? "bg-sky-100 border-sky-500 text-sky-600 shadow-sm"
-                  : "bg-white border-slate-200 text-slate-400 group-hover:border-sky-300 group-hover:text-sky-400"
+                  : cn("bg-white border-slate-200 text-slate-400 group-hover:border-sky-300 group-hover:text-sky-400", error && "border-red-200")
               )}
             >
               <Star className={cn("w-6 h-6", value === num && "fill-current")} />
@@ -42,6 +46,7 @@ export default function RatingScale({ label, value, onChange }: RatingScaleProps
           </button>
         ))}
       </div>
+      {error && <span className="text-xs font-bold text-red-500 uppercase tracking-wide">{error}</span>}
     </div>
   );
 }

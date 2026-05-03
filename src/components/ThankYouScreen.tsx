@@ -49,8 +49,11 @@ export default function ThankYouScreen() {
               <div className="bg-sky-600 text-white p-2 rounded-full mb-3 shadow-md">
                 <Ticket size={24} />
               </div>
-              <div className="text-4xl sm:text-5xl font-black text-[#0077B6] tracking-tighter mb-1">
-                10%
+              <div className="text-center mb-1">
+                <p className="text-xs sm:text-sm font-bold text-[#003B73] uppercase tracking-wider mb-1">Voccê acaba de ganhar</p>
+                <div className="text-4xl sm:text-5xl font-black text-[#0077B6] tracking-tighter mb-1">
+                  10%
+                </div>
               </div>
               <div className="text-[#003B73] font-black text-sm sm:text-base uppercase tracking-widest mb-4">
                 DE DESCONTO EM HOSPEDAGEM
