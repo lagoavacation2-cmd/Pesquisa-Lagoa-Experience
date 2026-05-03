@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-lagoa-dark: #003B73;
-  --color-lagoa-medium: #0077B6;
-  --color-lagoa-light: #00B4D8;
+  --color-lagoa-dark: #024A68;
+  --color-lagoa-medium: #036B8F;
+  --color-lagoa-light: #00A6D6;
   --color-lagoa-pool: #90E0EF;
 }
 
 @layer base {
   body {
-    @apply bg-[#F5F9FC] text-slate-800 antialiased font-sans;
+    @apply bg-[#F1F7FA] text-slate-800 antialiased font-sans;
   }
 }
 
 @layer components {
   .water-gradient {
-    background: linear-gradient(135deg, #003B73 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #024A68 0%, #036B8F 45%, #00A6D6 100%);
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/20;
+    @apply bg-white/90 backdrop-blur-md border border-white/40 shadow-xl;
   }
 }
 

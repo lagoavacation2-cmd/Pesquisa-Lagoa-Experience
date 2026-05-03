@@ -6,6 +6,8 @@ export interface NpsResponse {
   email?: string;
   hotel: string;
   periodo_hospedagem?: string;
+  data_checkin?: string;
+  data_checkout?: string;
   satisfacao_hospedagem: number;
   atendimento_hotel: number;
   atendimento_parque: number;

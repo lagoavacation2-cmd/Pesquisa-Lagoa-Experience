@@ -1,4 +1,4 @@
--- Create the NPS table
+-- 1. Criar a tabela com a estrutura correta
 CREATE TABLE IF NOT EXISTS public.nps_lagoa_experience (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at timestamptz DEFAULT now(),
@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS public.nps_lagoa_experience (
     email text,
     hotel text,
     periodo_hospedagem text,
+    data_checkin date,
+    data_checkout date,
     satisfacao_hospedagem integer NOT NULL,
     atendimento_hotel integer NOT NULL,
     atendimento_parque integer NOT NULL,
@@ -22,39 +24,38 @@ CREATE TABLE IF NOT EXISTS public.nps_lagoa_experience (
     dispositivo text
 );
 
--- Enable Row Level Security
+-- 2. Ativar Row Level Security
 ALTER TABLE public.nps_lagoa_experience ENABLE ROW LEVEL SECURITY;
 
--- Drop old policies to avoid conflicts
+-- 3. Limpar e Recriar Políticas RLS
 DROP POLICY IF EXISTS "Allow public insert" ON public.nps_lagoa_experience;
 DROP POLICY IF EXISTS "Allow selection for admin" ON public.nps_lagoa_experience;
 DROP POLICY IF EXISTS "Permitir insert publico nps" ON public.nps_lagoa_experience;
 DROP POLICY IF EXISTS "Permitir leitura admin nps" ON public.nps_lagoa_experience;
 DROP POLICY IF EXISTS "Permitir delete admin nps" ON public.nps_lagoa_experience;
 
--- Create Policies
--- 1. Permitir que qualquer cliente envie uma pesquisa (to anon)
+-- Permitir que qualquer cliente envie uma pesquisa
 CREATE POLICY "Permitir insert publico nps"
 ON public.nps_lagoa_experience
 FOR INSERT
 TO anon
 WITH CHECK (true);
 
--- 2. Permitir leitura para o portal administrativo usando anon key
+-- Permitir leitura para o portal administrativo usando anon key
 CREATE POLICY "Permitir leitura admin nps"
 ON public.nps_lagoa_experience
 FOR SELECT
 TO anon
 USING (true);
 
--- 3. Permitir exclusão no portal administrativo
+-- Permitir exclusão no portal administrativo
 CREATE POLICY "Permitir delete admin nps"
 ON public.nps_lagoa_experience
 FOR DELETE
 TO anon
 USING (true);
 
--- Enable Realtime for the table securely
+-- 4. Ativar Realtime de forma segura
 DO $$
 BEGIN
   IF NOT EXISTS (

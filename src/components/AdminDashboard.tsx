@@ -25,8 +25,10 @@ export default function AdminDashboard() {
   // Filters
   const [filters, setFilters] = useState({
     search: '',
-    startDate: '',
-    endDate: '',
+    startDate: '', // Survey date
+    endDate: '',   // Survey date
+    checkinDate: '',
+    checkoutDate: '',
     hotel: '',
     npsClass: ''
   });
@@ -107,6 +109,14 @@ export default function AdminDashboard() {
       });
     }
 
+    if (filters.checkinDate) {
+      result = result.filter(r => r.data_checkin === filters.checkinDate);
+    }
+
+    if (filters.checkoutDate) {
+      result = result.filter(r => r.data_checkout === filters.checkoutDate);
+    }
+
     setFilteredData(result);
   }, [data, filters]);
 
@@ -162,9 +172,9 @@ export default function AdminDashboard() {
   ];
 
   const exportCSV = () => {
-    const headers = "Data,Nome,Telefone,Hotel,Nota NPS,Classificação,Comentário\n";
+    const headers = "Data Pesquisa,Nome,Telefone,Hotel,Check-in,Check-out,Nota NPS,Classificação,Comentário\n";
     const rows = filteredData.map(r => 
-      `${r.created_at},${r.nome},${r.telefone},${r.hotel},${r.nota_nps},${r.classificacao_nps},"${r.comentario_final?.replace(/"/g, '""') || ''}"`
+      `${r.created_at},${r.nome},${r.telefone},${r.hotel},${r.data_checkin},${r.data_checkout},${r.nota_nps},${r.classificacao_nps},"${r.comentario_final?.replace(/"/g, '""') || ''}"`
     ).join("\n");
     const blob = new Blob(["\uFEFF" + headers + rows], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -265,7 +275,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
           <input 
@@ -285,7 +295,6 @@ export default function AdminDashboard() {
           <option value="Lagoa Jardins">Lagoa Jardins</option>
           <option value="Lagoa Eco Towers">Lagoa Eco Towers</option>
           <option value="Lagoa Quente Hotel">Lagoa Quente Hotel</option>
-          <option value="Outro">Outro</option>
         </select>
         <select 
           className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
@@ -304,6 +313,7 @@ export default function AdminDashboard() {
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
             value={filters.startDate}
             onChange={e => setFilters({...filters, startDate: e.target.value})}
+            title="Data da Pesquisa (Início)"
           />
         </div>
         <div className="relative">
@@ -313,6 +323,27 @@ export default function AdminDashboard() {
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
             value={filters.endDate}
             onChange={e => setFilters({...filters, endDate: e.target.value})}
+            title="Data da Pesquisa (Fim)"
+          />
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input 
+            type="date" 
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
+            value={filters.checkinDate}
+            onChange={e => setFilters({...filters, checkinDate: e.target.value})}
+            title="Check-in Específico"
+          />
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input 
+            type="date" 
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none cursor-pointer"
+            value={filters.checkoutDate}
+            onChange={e => setFilters({...filters, checkoutDate: e.target.value})}
+            title="Check-out Específico"
           />
         </div>
       </div>
@@ -376,23 +407,30 @@ export default function AdminDashboard() {
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Data</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Nome / Hotel</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Pesquisa</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Hóspede / Hotel</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Hospedagem</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">NPS</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Avaliações</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Obs</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredData.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                  <td className="px-6 py-4 text-[11px] text-slate-500 whitespace-nowrap">
                     {r.created_at ? format(parseISO(r.created_at), 'dd/MM/yy HH:mm') : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-slate-800">{r.nome}</span>
-                      <span className="text-xs text-sky-600 font-medium">{r.hotel}</span>
+                      <span className="text-[10px] text-sky-600 font-bold uppercase tracking-tighter">{r.hotel}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Check-in: <span className="text-slate-700">{r.data_checkin ? format(parseISO(r.data_checkin), 'dd/MM/yy') : '-'}</span></span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Check-out: <span className="text-slate-700">{r.data_checkout ? format(parseISO(r.data_checkout), 'dd/MM/yy') : '-'}</span></span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

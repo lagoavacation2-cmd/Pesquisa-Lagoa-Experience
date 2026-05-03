@@ -8,7 +8,7 @@ import NpsScale from './NpsScale';
 import ThankYouScreen from './ThankYouScreen';
 import { NpsResponse } from '@/src/types';
 
-const HOTELS = ["Lagoa Jardins", "Lagoa Eco Towers", "Lagoa Quente Hotel", "Outro"];
+const HOTELS = ["Lagoa Jardins", "Lagoa Eco Towers", "Lagoa Quente Hotel"];
 
 export default function PublicNpsForm() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,8 @@ export default function PublicNpsForm() {
     telefone: '',
     email: '',
     hotel: '',
-    periodo_hospedagem: '',
+    data_checkin: '',
+    data_checkout: '',
     satisfacao_hospedagem: 0,
     atendimento_hotel: 0,
     atendimento_parque: 0,
@@ -36,8 +37,13 @@ export default function PublicNpsForm() {
     setError(null);
 
     // Validation
-    if (!formData.nome || !formData.telefone || !formData.hotel) {
-      setError("Por favor, preencha os campos obrigatórios (Nome, Telefone e Hotel).");
+    if (!formData.nome || !formData.telefone || !formData.hotel || !formData.data_checkin || !formData.data_checkout) {
+      setError("Por favor, preencha todos os campos obrigatórios (Nome, Telefone, Hotel e Datas).");
+      return;
+    }
+
+    if (new Date(formData.data_checkout) < new Date(formData.data_checkin)) {
+      setError("A data de check-out não pode ser anterior à data de check-in.");
       return;
     }
 
@@ -78,7 +84,8 @@ export default function PublicNpsForm() {
         telefone: formData.telefone,
         email: formData.email || null,
         hotel: formData.hotel,
-        periodo_hospedagem: formData.periodo_hospedagem || null,
+        data_checkin: formData.data_checkin,
+        data_checkout: formData.data_checkout,
         satisfacao_hospedagem: Math.floor(Number(formData.satisfacao_hospedagem)),
         atendimento_hotel: Math.floor(Number(formData.atendimento_hotel)),
         atendimento_parque: Math.floor(Number(formData.atendimento_parque)),
@@ -94,19 +101,15 @@ export default function PublicNpsForm() {
         dispositivo: getDeviceType()
       };
 
-      console.log('Enviando payload:', payload);
-
-      const { data: insertData, error: submitError } = await supabase
+      const { error: submitError } = await supabase
         .from('nps_lagoa_experience')
-        .insert([payload])
-        .select();
+        .insert([payload]);
 
       if (submitError) {
         console.error('Erro detalhado do Supabase:', submitError);
         throw new Error(submitError.message);
       }
 
-      console.log('Sucesso ao salvar:', insertData);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
@@ -123,16 +126,6 @@ export default function PublicNpsForm() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header Info */}
-      <div className="mb-8 text-center sm:text-left px-4">
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-2 leading-tight">
-          Pesquisa de Satisfação <span className="text-sky-600">Lagoa Experience</span>
-        </h1>
-        <p className="text-slate-600">
-          Sua opinião é muito importante para continuarmos melhorando a sua experiência no Grupo Lagoa Quente.
-        </p>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-6 px-4 pb-20">
         {/* Step 1: Identification */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-6">
@@ -174,15 +167,34 @@ export default function PublicNpsForm() {
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Período da hospedagem (ex: 20 a 25 Out)"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all outline-none"
-                value={formData.periodo_hospedagem}
-                onChange={e => setFormData({ ...formData, periodo_hospedagem: e.target.value })}
-              />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400 ml-2">Data de Check-in *</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
+                <input
+                  type="date"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all outline-none"
+                  value={formData.data_checkin}
+                  onChange={e => setFormData({ ...formData, data_checkin: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-400 ml-2">Data de Check-out *</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
+                <input
+                  type="date"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all outline-none"
+                  value={formData.data_checkout}
+                  onChange={e => setFormData({ ...formData, data_checkout: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
