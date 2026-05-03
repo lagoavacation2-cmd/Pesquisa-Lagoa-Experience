@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lagoa-dark: #003B73;
+  --color-lagoa-medium: #0077B6;
+  --color-lagoa-light: #00B4D8;
+  --color-lagoa-pool: #90E0EF;
+}
+
+@layer base {
+  body {
+    @apply bg-[#F5F9FC] text-slate-800 antialiased font-sans;
+  }
+}
+
+@layer components {
+  .water-gradient {
+    background: linear-gradient(135deg, #003B73 0%, #0077B6 100%);
+  }
+  
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

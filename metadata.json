@@ -1,0 +1,6 @@
+{
+  "name": "Pesquisa de Satisfação Lagoa Experience",
+  "description": "Sistema de pesquisa NPS para clientes do Grupo Lagoa Quente com dashboard administrativo em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
