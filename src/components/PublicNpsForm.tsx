@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Send, Phone, User, Home, Calendar, Mail } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
-import { cn, formatPhone, getDeviceType } from '@/src/lib/utils';
+import { cn, formatPhone } from '@/src/lib/utils';
 import RatingScale from './RatingScale';
 import NpsScale from './NpsScale';
 import ThankYouScreen from './ThankYouScreen';
@@ -11,9 +11,9 @@ import { NpsResponse } from '@/src/types';
 const HOTELS = ["Lagoa Jardins", "Lagoa Eco Towers", "Lagoa Quente Hotel"];
 
 export default function PublicNpsForm() {
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -32,23 +32,26 @@ export default function PublicNpsForm() {
     comentario_final: ''
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    // Validation
+    if (isSubmitting) return;
+
+    setSubmitError(null);
+
+    // Form validation
     if (!formData.nome || !formData.telefone || !formData.hotel || !formData.data_checkin || !formData.data_checkout) {
-      setError("Por favor, preencha todos os campos obrigatórios (Nome, Telefone, Hotel e Datas).");
+      setSubmitError('Por favor, preencha todos os campos obrigatórios (Nome, Telefone, Hotel e Datas).');
       return;
     }
 
-    if (new Date(formData.data_checkout) < new Date(formData.data_checkin)) {
-      setError("A data de check-out não pode ser anterior à data de check-in.");
+    if (formData.data_checkout < formData.data_checkin) {
+      setSubmitError('A data de check-out não pode ser anterior à data de check-in.');
       return;
     }
 
     if (formData.nota_nps === null) {
-      setError("Por favor, responda a pergunta de recomendação (NPS).");
+      setSubmitError('Por favor, responda a pergunta de recomendação (NPS).');
       return;
     }
 
@@ -63,65 +66,78 @@ export default function PublicNpsForm() {
     ];
 
     if (mandatoryRatings.some(r => r === 0)) {
-      setError("Por favor, responda todas as avaliações de 1 a 5 estrelas.");
+      setSubmitError('Por favor, responda todas as avaliações de 1 a 5 estrelas.');
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
-      const notaNpsInt = Math.floor(Number(formData.nota_nps));
-      let classification: 'Detrator' | 'Neutro' | 'Promotor' = 'Detrator';
-      
-      if (notaNpsInt >= 9) {
-        classification = 'Promotor';
-      } else if (notaNpsInt >= 7) {
-        classification = 'Neutro';
-      }
+      const notaNps = Number(formData.nota_nps);
+      const classificacaoNps =
+        notaNps <= 6 ? 'Detrator' :
+        notaNps <= 8 ? 'Neutro' :
+        'Promotor';
 
       const payload = {
-        nome: formData.nome,
-        telefone: formData.telefone,
-        email: formData.email || null,
+        nome: formData.nome.trim(),
+        telefone: formData.telefone.trim(),
+        email: formData.email?.trim() || null,
         hotel: formData.hotel,
         data_checkin: formData.data_checkin,
         data_checkout: formData.data_checkout,
-        satisfacao_hospedagem: Math.floor(Number(formData.satisfacao_hospedagem)),
-        atendimento_hotel: Math.floor(Number(formData.atendimento_hotel)),
-        atendimento_parque: Math.floor(Number(formData.atendimento_parque)),
-        lazer_estrutura: Math.floor(Number(formData.lazer_estrutura)),
-        apresentacao_produto: Math.floor(Number(formData.apresentacao_produto)),
-        clareza_consultor: Math.floor(Number(formData.clareza_consultor)),
-        expectativa_entregue: Math.floor(Number(formData.expectativa_entregue)),
-        nota_nps: notaNpsInt,
-        classificacao_nps: classification,
-        comentario_final: formData.comentario_final || null,
+
+        satisfacao_hospedagem: Number(formData.satisfacao_hospedagem),
+        atendimento_hotel: Number(formData.atendimento_hotel),
+        atendimento_parque: Number(formData.atendimento_parque),
+        lazer_estrutura: Number(formData.lazer_estrutura),
+        apresentacao_produto: Number(formData.apresentacao_produto),
+        clareza_consultor: Number(formData.clareza_consultor),
+        expectativa_entregue: Number(formData.expectativa_entregue),
+
+        nota_nps: notaNps,
+        classificacao_nps: classificacaoNps,
+
+        comentario_final: formData.comentario_final?.trim() || null,
         origem: 'Lagoa Experience',
         user_agent: navigator.userAgent,
-        dispositivo: getDeviceType()
+        dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
       };
 
-      const { error: submitError } = await supabase
-        .from('nps_lagoa_experience')
-        .insert([payload]);
+      console.log('Payload enviado ao Supabase:', payload);
 
-      if (submitError) {
-        console.error('Erro detalhado do Supabase:', submitError);
-        throw new Error(submitError.message);
+      const insertPromise = supabase
+        .from('nps_lagoa_experience')
+        .insert([payload])
+        .select();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Tempo de conexão excedido. Tente novamente.')), 15000)
+      );
+
+      // Using any because Promise.race with different types can be tricky with TypeScript
+      const { data, error }: any = await Promise.race([insertPromise, timeoutPromise]);
+
+      if (error) {
+        console.error('Erro Supabase ao salvar avaliação:', error);
+        setSubmitError(error.message || 'Erro ao salvar avaliação.');
+        return;
       }
 
+      console.log('Avaliação salva com sucesso:', data);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } catch (err: any) {
-      console.error('Erro na submissão:', err);
-      setError(`Erro ao enviar avaliação: ${err.message || 'Verifique sua conexão.'}`);
+      console.error('Erro inesperado ao enviar avaliação:', err);
+      setSubmitError(err.message || 'Não foi possível enviar sua avaliação. Verifique os dados e tente novamente.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
-  };
+  }
 
   if (success) {
-    return <ThankYouScreen nps={formData.nota_nps || 0} />;
+    return <ThankYouScreen />;
   }
 
   return (
@@ -288,26 +304,26 @@ export default function PublicNpsForm() {
         </div>
 
         {/* Error Message */}
-        {error && (
+        {submitError && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl font-medium text-center"
           >
-            {error}
+            {submitError}
           </motion.div>
         )}
 
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={isSubmitting}
           className={cn(
             "w-full py-5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-sky-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed",
-            loading && "animate-pulse"
+            isSubmitting && "animate-pulse"
           )}
         >
-          {loading ? "Enviando..." : (
+          {isSubmitting ? "Enviando avaliação..." : (
             <>
               Enviar avaliação
               <Send size={20} />
