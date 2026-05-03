@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { useRef, useEffect } from 'react';
 
 interface RatingScaleProps {
   label: string;
@@ -11,12 +12,29 @@ interface RatingScaleProps {
 }
 
 export default function RatingScale({ label, value, onChange, required, error, id }: RatingScaleProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Somente no mobile
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile && scrollRef.current) {
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+      }, 300);
+    }
+  }, []);
+
   return (
     <div id={id} className={cn("flex flex-col gap-3 p-4 rounded-2xl transition-all", error && "bg-red-50/50 ring-1 ring-red-200")}>
       <label className="text-sm font-medium text-slate-700">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:overflow-visible sm:justify-start sm:flex-wrap">
+      <div 
+        ref={scrollRef}
+        className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:overflow-visible sm:justify-start sm:flex-wrap hide-scrollbar scroll-smooth"
+      >
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
           <button
             key={num}
