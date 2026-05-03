@@ -50,7 +50,7 @@ export default function ThankYouScreen() {
                 <Ticket size={24} />
               </div>
               <div className="text-center mb-1">
-                <p className="text-xs sm:text-sm font-bold text-[#003B73] uppercase tracking-wider mb-1">Voccê acaba de ganhar</p>
+                <p className="text-xs sm:text-sm font-bold text-[#003B73] uppercase tracking-wider mb-1">Você acaba de ganhar</p>
                 <div className="text-4xl sm:text-5xl font-black text-[#0077B6] tracking-tighter mb-1">
                   10%
                 </div>
