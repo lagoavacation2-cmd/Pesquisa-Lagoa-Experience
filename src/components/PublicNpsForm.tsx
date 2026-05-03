@@ -55,6 +55,11 @@ export default function PublicNpsForm() {
       if (isEmptyValue(value)) {
         errors[field] = 'Campo obrigatório';
       }
+      
+      const numValue = Number(value);
+      if (!isEmptyValue(value) && (numValue < 1 || numValue > 10)) {
+        errors[field] = 'Selecione uma nota de 1 a 10';
+      }
     });
 
     if (formData.nota_nps === null || formData.nota_nps === undefined || formData.nota_nps as any === '') {
@@ -92,7 +97,7 @@ export default function PublicNpsForm() {
       if (ratingErrors.nota_nps && Object.keys(ratingErrors).length === 1) {
         setSubmitError('Por favor, selecione uma nota de recomendação de 0 a 10.');
       } else {
-        setSubmitError('Por favor, responda todas as perguntas de avaliação antes de finalizar.');
+        setSubmitError('Por favor, responda todas as perguntas de avaliação (1 a 10) antes de finalizar.');
       }
 
       // Scroll to first error

@@ -16,26 +16,26 @@ export default function RatingScale({ label, value, onChange, required, error, i
       <label className="text-sm font-medium text-slate-700">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
-      <div className="flex items-center justify-between max-w-sm">
-        {[1, 2, 3, 4, 5].map((num) => (
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:overflow-visible sm:justify-start sm:flex-wrap">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
           <button
             key={num}
             type="button"
             onClick={() => onChange(num)}
             className={cn(
-              "flex flex-col items-center gap-1 transition-all duration-200 group",
+              "flex flex-col items-center gap-1 transition-all duration-200 group flex-shrink-0",
               value === num ? "scale-110" : "hover:scale-105"
             )}
           >
             <div
               className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-colors",
+                "w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center border-2 transition-colors",
                 value === num
                   ? "bg-sky-100 border-sky-500 text-sky-600 shadow-sm"
                   : cn("bg-white border-slate-200 text-slate-400 group-hover:border-sky-300 group-hover:text-sky-400", error && "border-red-200")
               )}
             >
-              <Star className={cn("w-6 h-6", value === num && "fill-current")} />
+              <Star className={cn("w-4 h-4 sm:w-5 sm:h-5", value === num && "fill-current")} />
             </div>
             <span className={cn(
               "text-[10px] font-bold uppercase tracking-wider",

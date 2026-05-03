@@ -378,7 +378,7 @@ export default function AdminDashboard() {
              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryAverages} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" domain={[0, 5]} hide />
+                  <XAxis type="number" domain={[0, 10]} hide />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={100} />
                   <Tooltip 
                     cursor={{fill: 'transparent'}}
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
                   />
                   <Bar dataKey="score" fill="#90e0ef" radius={[0, 6, 6, 0]}>
                     {categoryAverages.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.score >= 4 ? '#10b981' : entry.score >= 3 ? '#f59e0b' : '#ef4444'} />
+                      <Cell key={`cell-${index}`} fill={entry.score >= 8 ? '#10b981' : entry.score >= 6 ? '#f59e0b' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>
