@@ -128,7 +128,7 @@ export default function App() {
         <Route path="/admin" element={
           isAdminAuth ? (
             <Layout hideDeco>
-              <AdminDashboard />
+              <AdminDashboard onLogout={() => setIsAdminAuth(false)} />
             </Layout>
           ) : (
             <Layout hideDeco>

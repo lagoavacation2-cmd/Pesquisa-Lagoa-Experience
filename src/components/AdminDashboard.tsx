@@ -15,7 +15,7 @@ import { NpsResponse } from '@/src/types';
 import StatCard from './StatCard';
 import { cn } from '@/src/lib/utils';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
   const [data, setData] = useState<NpsResponse[]>([]);
   const [filteredData, setFilteredData] = useState<NpsResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,7 +220,14 @@ export default function AdminDashboard() {
             <Download size={18} /> Exportar
           </button>
           <button 
-            onClick={() => { logout(); window.location.reload(); }}
+            onClick={() => { 
+              logout(); 
+              if (onLogout) {
+                onLogout();
+              } else {
+                window.location.href = '/admin';
+              }
+            }}
             className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors border border-red-100"
             title="Sair"
           >
