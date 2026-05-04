@@ -10,15 +10,15 @@ interface NpsScaleProps {
 
 export default function NpsScale({ value, onChange, id, error, required }: NpsScaleProps) {
   const getColors = (num: number) => {
-    if (num <= 6) return value === num ? "bg-red-500 text-white border-red-600" : "hover:border-red-300 hover:text-red-500";
-    if (num <= 8) return value === num ? "bg-amber-400 text-white border-amber-500" : "hover:border-amber-200 hover:text-amber-500";
+    if (num <= 2) return value === num ? "bg-red-500 text-white border-red-600" : "hover:border-red-300 hover:text-red-500";
+    if (num <= 4) return value === num ? "bg-amber-400 text-white border-amber-500" : "hover:border-amber-200 hover:text-amber-500";
     return value === num ? "bg-emerald-500 text-white border-emerald-600" : "hover:border-emerald-200 hover:text-emerald-500";
   };
 
   return (
     <div id={id} className={cn("flex flex-col gap-4 p-4 rounded-3xl transition-all", error && "bg-red-50/50 ring-1 ring-red-200")}>
-      <div className="grid grid-cols-4 sm:grid-cols-11 gap-2">
-        {Array.from({ length: 11 }, (_, i) => i).map((num) => (
+      <div className="grid grid-cols-6 sm:grid-cols-6 gap-2">
+        {Array.from({ length: 6 }, (_, i) => i).map((num) => (
           <button
             key={num}
             type="button"

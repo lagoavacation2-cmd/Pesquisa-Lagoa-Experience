@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react';
 
 interface RatingScaleProps {
   label: string;
-  value: number;
+  value: number | null;
   onChange: (value: number) => void;
   required?: boolean;
   error?: string;
@@ -17,8 +17,8 @@ export default function RatingScale({ label, value, onChange, required, error, i
       <label className="text-sm font-medium text-slate-700">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
-      <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-x-2 gap-y-4">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+      <div className="grid grid-cols-6 sm:flex sm:flex-wrap gap-x-2 gap-y-4">
+        {[0, 1, 2, 3, 4, 5].map((num) => (
           <button
             key={num}
             type="button"

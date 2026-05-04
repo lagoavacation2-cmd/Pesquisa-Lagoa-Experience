@@ -146,7 +146,7 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
   };
 
   // Charts Data
-  const npsDistribution = Array.from({ length: 11 }, (_, i) => ({
+  const npsDistribution = Array.from({ length: 6 }, (_, i) => ({
     note: i,
     count: filteredData.filter(r => r.nota_nps === i).length
   }));
@@ -329,7 +329,7 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <BarChart3 size={20} className="text-sky-600" /> Distribuição NPS (0-10)
+            <BarChart3 size={20} className="text-sky-600" /> Distribuição NPS (0-5)
           </h3>
           <div className="h-[300px]">
              <ResponsiveContainer width="100%" height="100%">
@@ -355,7 +355,7 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryAverages} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" domain={[0, 10]} hide />
+                  <XAxis type="number" domain={[0, 5]} hide />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={100} />
                   <Tooltip 
                     cursor={{fill: 'transparent'}}
@@ -363,7 +363,7 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
                   />
                   <Bar dataKey="score" fill="#90e0ef" radius={[0, 6, 6, 0]}>
                     {categoryAverages.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.score >= 8 ? '#10b981' : entry.score >= 6 ? '#f59e0b' : '#ef4444'} />
+                      <Cell key={`cell-${index}`} fill={entry.score >= 4.5 ? '#10b981' : entry.score >= 3 ? '#f59e0b' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>

@@ -20,13 +20,13 @@ export default function PublicNpsForm() {
     telefone: '',
     email: '',
     hotel: '',
-    satisfacao_hospedagem: 0,
-    atendimento_hotel: 0,
-    atendimento_parque: 0,
-    lazer_estrutura: 0,
-    apresentacao_produto: 0,
-    clareza_consultor: 0,
-    expectativa_entregue: 0,
+    satisfacao_hospedagem: null as number | null,
+    atendimento_hotel: null as number | null,
+    atendimento_parque: null as number | null,
+    lazer_estrutura: null as number | null,
+    apresentacao_produto: null as number | null,
+    clareza_consultor: null as number | null,
+    expectativa_entregue: null as number | null,
     nota_nps: null as number | null,
     comentario_final: ''
   });
@@ -42,7 +42,7 @@ export default function PublicNpsForm() {
   ];
 
   function isEmptyValue(value: any) {
-    return value === null || value === undefined || value === '' || value === 0;
+    return value === null || value === undefined || value === '';
   }
 
   function validateRatings() {
@@ -55,13 +55,13 @@ export default function PublicNpsForm() {
       }
       
       const numValue = Number(value);
-      if (!isEmptyValue(value) && (numValue < 1 || numValue > 10)) {
-        errors[field] = 'Selecione uma nota de 1 a 10';
+      if (!isEmptyValue(value) && (numValue < 0 || numValue > 5)) {
+        errors[field] = 'Selecione uma nota de 0 a 5';
       }
     });
 
     if (formData.nota_nps === null || formData.nota_nps === undefined || formData.nota_nps as any === '') {
-      errors.nota_nps = 'Selecione uma nota de 0 a 10';
+      errors.nota_nps = 'Selecione uma nota de 0 a 5';
     }
 
     return errors;
@@ -88,9 +88,9 @@ export default function PublicNpsForm() {
       setFieldErrors(ratingErrors);
       
       if (ratingErrors.nota_nps && Object.keys(ratingErrors).length === 1) {
-        setSubmitError('Por favor, selecione uma nota de recomendação de 0 a 10.');
+        setSubmitError('Por favor, selecione uma nota de recomendação de 0 a 5.');
       } else {
-        setSubmitError('Por favor, responda todas as perguntas de avaliação (1 a 10) antes de finalizar.');
+        setSubmitError('Por favor, responda todas as perguntas de avaliação (0 a 5) antes de finalizar.');
       }
 
       // Scroll to first error
@@ -107,8 +107,8 @@ export default function PublicNpsForm() {
     try {
       const notaNps = Number(formData.nota_nps);
       const classificacaoNps =
-        notaNps <= 6 ? 'Detrator' :
-        notaNps <= 8 ? 'Neutro' :
+        notaNps <= 2 ? 'Detrator' :
+        notaNps <= 4 ? 'Neutro' :
         'Promotor';
 
       const payload = {
@@ -351,7 +351,7 @@ export default function PublicNpsForm() {
           </div>
 
           <label className="text-base font-semibold text-slate-700 leading-snug">
-            De 0 a 10, qual a probabilidade de você recomendar a experiência Lagoa Experience para um amigo ou familiar?
+            De 0 a 5, qual a probabilidade de você recomendar a experiência Lagoa Experience para um amigo ou familiar?
           </label>
           
           <NpsScale 
