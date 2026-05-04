@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, TrendingUp, Smile, Meh, Frown, 
   BarChart3, Calendar, Search, Download, 
-  RefreshCw, Wifi, WifiOff, LogOut, Filter, Trash2, AlertCircle
+  RefreshCw, Wifi, WifiOff, LogOut, Filter, Trash2, AlertCircle, Eye
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -13,6 +13,7 @@ import { supabase } from '@/src/lib/supabase';
 import { logout } from '@/src/lib/auth';
 import { NpsResponse } from '@/src/types';
 import StatCard from './StatCard';
+import SurveyDetailModal from './SurveyDetailModal';
 import { cn } from '@/src/lib/utils';
 
 export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) {
@@ -21,6 +22,10 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
+  
+  // Modal State
+  const [selectedSurvey, setSelectedSurvey] = useState<NpsResponse | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState({
@@ -123,7 +128,12 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
         .eq('id', id);
 
       if (error) throw error;
-      // Note: Realtime will handle the state update
+      
+      // If the deleted survey was open in the modal, close it
+      if (selectedSurvey?.id === id) {
+        setIsModalOpen(false);
+        setSelectedSurvey(null);
+      }
     } catch (err: any) {
       console.error('Erro ao excluir:', err);
       alert('Não foi possível excluir a pesquisa. ' + (err.message || ''));
@@ -175,6 +185,15 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
 
   return (
     <div className="flex flex-col gap-6 pb-20">
+      {/* Detail Modal */}
+      <SurveyDetailModal 
+        survey={selectedSurvey}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onDelete={handleDelete}
+        isDeleting={deletingId === selectedSurvey?.id}
+      />
+
       {/* Header Admin */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div>
@@ -393,7 +412,14 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredData.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                <tr 
+                  key={r.id} 
+                  className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                  onClick={() => {
+                    setSelectedSurvey(r);
+                    setIsModalOpen(true);
+                  }}
+                >
                   <td className="px-6 py-4 text-[11px] text-slate-500 whitespace-nowrap">
                     {r.created_at ? format(parseISO(r.created_at), 'dd/MM/yy HH:mm') : '-'}
                   </td>
@@ -429,18 +455,30 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
                       )}
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => r.id && handleDelete(r.id, r.nome)}
-                      disabled={deletingId === r.id}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30"
-                      title="Excluir"
-                    >
-                      {deletingId === r.id ? (
-                        <RefreshCw size={18} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={18} />
-                      )}
-                    </button>
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => {
+                          setSelectedSurvey(r);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-2 text-sky-500 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-all"
+                        title="Ver detalhes"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => r.id && handleDelete(r.id, r.nome)}
+                        disabled={deletingId === r.id}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30"
+                        title="Excluir"
+                      >
+                        {deletingId === r.id ? (
+                          <RefreshCw size={18} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
