@@ -298,7 +298,7 @@ export default function PublicNpsForm() {
           />
           <RatingScale 
             id="apresentacao_produto"
-            label="5. Como você avalia a apresentação do produto Lagoa Experience?" 
+            label="5. Como você avalia a apresentação do produto Lagoa Experience na sala de vendas?" 
             value={formData.apresentacao_produto} 
             required
             error={fieldErrors.apresentacao_produto}

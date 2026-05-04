@@ -166,7 +166,7 @@ export default function AdminDashboard({ onLogout }: { onLogout?: () => void }) 
     { name: 'Atend. Hotel', score: parseFloat(getAverage('atendimento_hotel')) },
     { name: 'Atend. Parque', score: parseFloat(getAverage('atendimento_parque')) },
     { name: 'Estrutura', score: parseFloat(getAverage('lazer_estrutura')) },
-    { name: 'Apresentação', score: parseFloat(getAverage('apresentacao_produto')) },
+    { name: 'Apres. Sala Vendas', score: parseFloat(getAverage('apresentacao_produto')) },
     { name: 'Clareza', score: parseFloat(getAverage('clareza_consultor')) },
     { name: 'Expectativa', score: parseFloat(getAverage('expectativa_entregue')) },
   ];

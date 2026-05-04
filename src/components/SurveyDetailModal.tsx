@@ -26,7 +26,7 @@ export default function SurveyDetailModal({ survey, isOpen, onClose, onDelete, i
     { key: 'atendimento_hotel', label: 'Atendimento equipe hotel' },
     { key: 'atendimento_parque', label: 'Atendimento equipe parque' },
     { key: 'lazer_estrutura', label: 'Lazer, estrutura e conforto' },
-    { key: 'apresentacao_produto', label: 'Apresentação produto Lagoa' },
+    { key: 'apresentacao_produto', label: 'Apresentação produto Lagoa (Sala de Vendas)' },
     { key: 'clareza_consultor', label: 'Clareza e respeito consultor' },
     { key: 'expectativa_entregue', label: 'Correspondência expectativa' },
     { key: 'nota_nps', label: 'Recomendação (NPS)' },
