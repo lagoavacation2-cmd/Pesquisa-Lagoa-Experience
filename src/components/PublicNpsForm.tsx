@@ -20,8 +20,6 @@ export default function PublicNpsForm() {
     telefone: '',
     email: '',
     hotel: '',
-    data_checkin: '',
-    data_checkout: '',
     satisfacao_hospedagem: 0,
     atendimento_hotel: 0,
     atendimento_parque: 0,
@@ -78,13 +76,8 @@ export default function PublicNpsForm() {
     setFieldErrors({});
 
     // Form validation (Step 1)
-    if (!formData.nome || !formData.telefone || !formData.hotel || !formData.data_checkin || !formData.data_checkout) {
-      setSubmitError('Por favor, preencha todos os campos obrigatórios (Nome, Telefone, Hotel e Datas).');
-      return;
-    }
-
-    if (formData.data_checkout < formData.data_checkin) {
-      setSubmitError('A data de check-out não pode ser anterior à data de check-in.');
+    if (!formData.nome || !formData.telefone || !formData.hotel) {
+      setSubmitError('Por favor, preencha todos os campos obrigatórios (Nome, Telefone e Hotel).');
       return;
     }
 
@@ -123,8 +116,6 @@ export default function PublicNpsForm() {
         telefone: formData.telefone.trim(),
         email: formData.email?.trim() || null,
         hotel: formData.hotel,
-        data_checkin: formData.data_checkin,
-        data_checkout: formData.data_checkout,
 
         satisfacao_hospedagem: Number(formData.satisfacao_hospedagem),
         atendimento_hotel: Number(formData.atendimento_hotel),
@@ -221,35 +212,6 @@ export default function PublicNpsForm() {
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400 ml-2">Data de Check-in *</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all outline-none"
-                  value={formData.data_checkin}
-                  onChange={e => setFormData({ ...formData, data_checkin: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400 ml-2">Data de Check-out *</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all outline-none"
-                  value={formData.data_checkout}
-                  onChange={e => setFormData({ ...formData, data_checkout: e.target.value })}
-                />
-              </div>
             </div>
           </div>
 

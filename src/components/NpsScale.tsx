@@ -17,7 +17,7 @@ export default function NpsScale({ value, onChange, id, error, required }: NpsSc
 
   return (
     <div id={id} className={cn("flex flex-col gap-4 p-4 rounded-3xl transition-all", error && "bg-red-50/50 ring-1 ring-red-200")}>
-      <div className="grid grid-cols-6 sm:grid-cols-11 gap-2">
+      <div className="grid grid-cols-4 sm:grid-cols-11 gap-2">
         {Array.from({ length: 11 }, (_, i) => i).map((num) => (
           <button
             key={num}
