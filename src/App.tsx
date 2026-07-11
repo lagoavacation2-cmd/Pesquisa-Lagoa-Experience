@@ -12,6 +12,10 @@ const DECO_IMAGE = "https://i.postimg.cc/RF3bdCm2/Chat-GPT-Image-3-05-2026-12-23
 export default function App() {
   const [isAdminAuth, setIsAdminAuth] = useState(isAuthenticated());
 
+  useEffect(() => {
+    document.title = "NPS - MINI-VAC";
+  }, []);
+
   // Simple layout wrapper for consistency
   const Layout = ({ children, hideDeco = false }: { children: React.ReactNode, hideDeco?: boolean }) => (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#F1F7FA]">
