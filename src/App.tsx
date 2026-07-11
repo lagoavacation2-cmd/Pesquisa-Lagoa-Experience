@@ -13,7 +13,7 @@ export default function App() {
   const [isAdminAuth, setIsAdminAuth] = useState(isAuthenticated());
 
   useEffect(() => {
-    document.title = "NPS - MINI-VAC";
+    document.title = "NPS - Lagoa Experience";
   }, []);
 
   // Simple layout wrapper for consistency
